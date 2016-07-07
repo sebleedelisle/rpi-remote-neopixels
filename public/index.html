@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, width=320.1, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Slider Testbed Demo</title>
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="omni-slider.css">
+   
+    <style>
+      html {
+        font-size: 13px;
+      }
+
+      body {
+        font-family: Helvetica,Arial,sans-serif;
+        line-height: 16px;
+        margin: 20px;
+      }
+
+      h1 {
+        font-size: 39px;
+      }
+
+      h2 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #0a84c1;
+        margin-top: 40px;
+      }
+
+      strong {
+        font-weight: 700;
+      }
+
+      small {
+        font-size: smaller;
+        color: darkgrey;
+      }
+
+      .container {
+        width: 80%;
+		margin:auto;
+      }
+
+      .wrap {
+        margin-top: 10px;
+        position: relative;
+		margin-bottom:4em;
+      }
+	#button {
+		display : block; 
+		background : white; 
+		border : 2px black solid;
+		border-radius : 8px;  
+		width : 80%; 
+		height : 100px; 
+		margin-bottom:2em;
+	}
+
+    </style>
+  </head>
+
+
+	<script type="text/javascript" src="omni-slider.js"></script>
+	<script type="text/javascript" src="socket.io/socket.io.js"></script>
+	<script>
+	
+window.onload = function() {
+		
+	var socket = io.connect();
+		
+	var sliderHue = new Slider(document.getElementById('sliderHue'), {
+		isOneWay: true,
+		start: 0, 
+		//min:-10,
+		max:90
+	});
+	sliderHue.subscribe('moving', function(data) {
+		//console.log(sliderHue.getInfo().right);
+		socket.emit('colour', { hue: sliderHue.getInfo().right-10, sat:sliderSat.getInfo().right, light:sliderLight.getInfo().right });
+	});
+	
+	
+	var sliderSat = new Slider(document.getElementById('sliderSaturation'), {
+		isOneWay: true,
+		start: 100
+	});
+	sliderSat.subscribe('moving', function(data) {
+		socket.emit('colour', { hue: sliderHue.getInfo().right-10, sat:sliderSat.getInfo().right, light:sliderLight.getInfo().right });
+	
+	});
+	
+	var sliderLight = new Slider(document.getElementById('sliderLightness'), {
+		isOneWay: true,
+		start: 100
+	});
+	sliderLight.subscribe('moving', function(data) {
+		socket.emit('colour', { hue: sliderHue.getInfo().right-10, sat:sliderSat.getInfo().right, light:sliderLight.getInfo().right });
+	
+	});
+	// document.addEventListener('mousedown', function(){
+	// 				console.log('click');
+	// 				sliderHue.move({left:-0.001, right:1}, false);
+	// 			});
+	
+	
+	
+	socket.on('colour', function (data) {
+		//document.getElementById("outputText").style.background = (data.value)?'red':'white';
+		console.log("received : ", data); 
+		sliderHue.move({left:-1, right:data.hue+10}, true);
+		sliderSat.move({left:-0.001, right:data.sat}, true);
+		sliderLight.move({left:-0.001, right:data.light}, true);
+	});
+	
+	socket.on('switch', function (data) {
+		//document.getElementById("outputText").style.background = (data.value)?'red':'white';
+		console.log("received : ", data); 
+		lighton = data; 
+		updateLight(); 
+	});
+	
+	// function mouseDown(){	
+	// 	socket.emit('led', { value: true });
+	// }
+	// function mouseUp(){
+	// 	socket.emit('led', { value: false });
+	// }
+	var lighton = false; 
+	var button = document.getElementById('button'); 
+	button.addEventListener('mousedown', function() { 
+		lighton=!lighton; 
+		socket.emit('switch', lighton); 
+		updateLight(); 
+	}); 
+	
+	function updateLight() { 
+		button.style.background = lighton?'red':'white';	
+	}
+ 
+};
+  </script>
+  <body>
+	<div class='container'>
+		<div id="button"> </div>
+	</div>
+	<div class='container'>
+		<div id="sliderHue" class="wrap"></div>
+	</div>
+   	<div class='container'>
+		<div id="sliderSaturation" class="wrap"></div>
+	</div>
+	<div class='container'>
+		<div id="sliderLightness" class="wrap"></div>
+	</div>
+
+  </body>
+</html>
